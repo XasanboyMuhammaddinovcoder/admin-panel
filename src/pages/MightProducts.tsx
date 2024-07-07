@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button, Table, Modal, Form, Input, Space } from "antd";
 import { MdModeEditOutline } from "react-icons/md";
 import { FaRegTrashCan } from "react-icons/fa6";

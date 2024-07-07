@@ -145,7 +145,7 @@ const Newproducts: React.FC = () => {
       try {
         setLoading(true);
         await deleteDocument(getDocument(db, "products", productId));
-        alert("Product deleted");
+        // alert("Product deleted");
         fetchProducts(); // Update the product list after deletion
       } catch (error) {
         // alert("Error: " + (error as Error).message);
