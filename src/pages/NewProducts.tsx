@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Table, Modal, Form, Input, Space } from "antd";
+import { Button, Table, Modal, Form, Input, Select, Space } from "antd";
 import { MdModeEditOutline } from "react-icons/md";
 import { FaRegTrashCan } from "react-icons/fa6";
 import {
@@ -17,20 +17,26 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  category: string;
 }
 
-const Newproducts: React.FC = () => {
+const dataCategory = ['All', 'XX-Small', 'X-Small', 'Small', 'Medium', 'Large', 'X-Large', 'XX-Large', '3X-Large', '4X-Large'];
+
+const NewProducts: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [form] = Form.useForm();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
   const columns: ColumnsType<Product> = [
     {
       title: "ID",
-      dataIndex: "ID",
-      key: "ID",
+      dataIndex: "id",
+      key: "id",
       render: (_text: string, _record: Product, index: number) => index + 1,
       width: 100,
     },
@@ -44,6 +50,11 @@ const Newproducts: React.FC = () => {
       dataIndex: "price",
       key: "price",
       align: "right",
+    },
+    {
+      title: "Category",
+      dataIndex: "category",
+      key: "category",
     },
     {
       title: "Actions",
@@ -79,7 +90,7 @@ const Newproducts: React.FC = () => {
     }
   };
 
-  const handleFirebaseOperation = async (values: { name: string; price: number }) => {
+  const handleFirebaseOperation = async (values: { name: string; price: number; category: string }) => {
     try {
       setLoading(true);
 
@@ -106,6 +117,7 @@ const Newproducts: React.FC = () => {
       ...doc.data()
     })) as Product[];
     setProducts(productsList);
+    setFilteredProducts(productsList);
   };
 
   const handleDelete = async (productId: string) => {
@@ -126,9 +138,29 @@ const Newproducts: React.FC = () => {
     form.setFieldsValue({
       name: product.name,
       price: product.price,
+      category: product.category,
     });
     setSelectedProductId(product.id);
     setIsModalOpen(true);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    filterProducts(value, selectedCategory);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    filterProducts(searchTerm, value);
+  };
+
+  const filterProducts = (term: string, category: string) => {
+    const filtered = products.filter(product => {
+      const matchesTerm = product.name.toLowerCase().includes(term.toLowerCase());
+      const matchesCategory = category === "All" || product.category === category;
+      return matchesTerm && matchesCategory;
+    });
+    setFilteredProducts(filtered);
   };
 
   useEffect(() => {
@@ -138,8 +170,33 @@ const Newproducts: React.FC = () => {
   return (
     <div className="flex flex-col items-center h-screen bg-gray-100 p-4">
       <h1 className="text-center text-[40px] mb-6">NEW ARRIVALS</h1>
-      <Table className="w-full" columns={columns} dataSource={products.map((product, index) => ({ ...product, index }))} rowKey="id" />
-
+      <header className="flex items-center justify-between w-full mb-6">
+        <Input
+          placeholder="Search products"
+          value={searchTerm}
+          onChange={e => handleSearch(e.target.value)}
+          className="w-[250px]"
+        />
+        <Select
+          placeholder="Select category"
+          className="w-[250px]"
+          onChange={handleCategoryChange}
+          value={selectedCategory}
+          allowClear
+        >
+          {dataCategory.map((category, index) => (
+            <Select.Option key={index} value={category}>
+              {category}
+            </Select.Option>
+          ))}
+        </Select>
+      </header>
+      <Table
+        className="w-full"
+        columns={columns}
+        dataSource={filteredProducts}
+        rowKey="id"
+      />
       <Modal
         title={selectedProductId ? "Edit Product" : "Add Product"}
         visible={isModalOpen}
@@ -162,9 +219,21 @@ const Newproducts: React.FC = () => {
           >
             <Input type="number" />
           </Form.Item>
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true, message: "Please select category!" }]}
+          >
+            <Select>
+              {dataCategory.slice(1).map((category, index) => (
+                <Select.Option key={index} value={category}>
+                  {category}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
         </Form>
       </Modal>
-
       <div className="mb-6 fixed bottom-[30px] right-[30px]">
         <Button title="Add Product" type="primary" onClick={showModal}>+</Button>
       </div>
@@ -172,4 +241,4 @@ const Newproducts: React.FC = () => {
   );
 };
 
-export default Newproducts;
+export default NewProducts;

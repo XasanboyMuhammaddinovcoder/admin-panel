@@ -10,6 +10,7 @@ const Login: React.FC = () => {
   const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true);
     try {
+      
       await signInWithEmailAndPassword(auth, values.email, values.password);
       alert("Ma'lumotlar yuborildi");
     } catch (error) {
