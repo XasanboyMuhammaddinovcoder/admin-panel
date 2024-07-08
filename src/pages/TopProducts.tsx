@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Table, Modal, Form, Input, Space } from "antd";
 import { MdModeEditOutline } from "react-icons/md";
 import { FaRegTrashCan } from "react-icons/fa6";
@@ -10,22 +10,13 @@ import {
   updateDoc as updateDocument,
   doc as getDocument,
 } from "firebase/firestore";
-import {
-  db,
-  storage,
-} from "../../firebase/config";
-import {
-  getDownloadURL,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
+import { db } from "../../firebase/config";
 import type { ColumnsType } from 'antd/es/table';
 
 interface Product {
   id: string;
   name: string;
   price: number;
-  img: string;
 }
 
 const TopProducts: React.FC = () => {
@@ -81,52 +72,29 @@ const TopProducts: React.FC = () => {
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      const file = values.img?.[0]?.originFileObj;
-
       setLoading(true);
-
-      if (file) {
-        const storageRef = ref(storage, `images/${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        uploadTask.on(
-          "state_changed",
-          snapshot => {},
-          error => {
-            setLoading(false);
-            alert("Error: " + error.message);
-          },
-          async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            handleFirebaseOperation({ ...values, img: downloadURL });
-          }
-        );
-      } else {
-        handleFirebaseOperation(values);
-      }
+      await handleFirebaseOperation(values);
     } catch (error) {
       alert("Error: " + (error as Error).message);
     }
   };
 
-  const handleFirebaseOperation = async (values: { [key: string]: any }) => {
+  const handleFirebaseOperation = async (values: { name: string; price: number }) => {
     try {
       setLoading(true);
 
       if (selectedProductId) {
         const productRef = getDocument(db, `topProducts/${selectedProductId}`);
         await updateDocument(productRef, { ...values });
-        // alert("Product updated");
       } else {
         await addDoc(collection(db, "topProducts"), { ...values });
-        // alert("Product added");
       }
 
       handleCancel();
       setLoading(false);
       fetchProducts();
     } catch (error) {
-    //   alert("Error: " + (error as Error).message);
+      alert("Error: " + (error as Error).message);
       setLoading(false);
     }
   };
@@ -145,10 +113,9 @@ const TopProducts: React.FC = () => {
       try {
         setLoading(true);
         await deleteDocument(getDocument(db, "topProducts", productId));
-        // alert("Product deleted");
-        fetchProducts(); // Update the product list after deletion
+        fetchProducts();
       } catch (error) {
-        // alert("Error: " + (error as Error).message);
+        alert("Error: " + (error as Error).message);
       } finally {
         setLoading(false);
       }
@@ -159,7 +126,6 @@ const TopProducts: React.FC = () => {
     form.setFieldsValue({
       name: product.name,
       price: product.price,
-      // img: product.img // Uncomment this if you want to edit the image
     });
     setSelectedProductId(product.id);
     setIsModalOpen(true);
@@ -196,18 +162,6 @@ const TopProducts: React.FC = () => {
           >
             <Input type="number" />
           </Form.Item>
-          {/* Uncomment this section if you want to allow editing of the image */}
-          {/* <Form.Item
-            name="img"
-            label="Upload Image"
-            rules={[{ required: true, message: "Please upload image!" }]}
-            valuePropName="fileList"
-            getValueFromEvent={(e) => e && e.fileList}
-          >
-            <Upload beforeUpload={() => false} listType="picture">
-              <Button icon={<UploadOutlined />}>Select Image</Button>
-            </Upload>
-          </Form.Item> */}
         </Form>
       </Modal>
       <div className="mb-6 fixed bottom-[30px] right-[30px]">

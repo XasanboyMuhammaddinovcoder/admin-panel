@@ -10,22 +10,13 @@ import {
   updateDoc as updateDocument,
   doc as getDocument,
 } from "firebase/firestore";
-import {
-  db,
-  storage,
-} from "../../firebase/config";
-import {
-  getDownloadURL,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
+import { db } from "../../firebase/config";
 import { ColumnsType } from "antd/es/table";
 
 interface Product {
   id: string;
   name: string;
   price: number;
-  img: string;
 }
 
 const Newproducts: React.FC = () => {
@@ -61,7 +52,7 @@ const Newproducts: React.FC = () => {
       render: (_text: string, record: Product) => (
         <Space size="middle">
           <Button title="Edit" type="primary" onClick={() => handleEdit(record)}><MdModeEditOutline /></Button>
-          <Button title="Delete"  onClick={() => handleDelete(record.id)}><FaRegTrashCan className="text-[red]"/></Button>
+          <Button title="Delete" onClick={() => handleDelete(record.id)}><FaRegTrashCan className="text-[red]" /></Button>
         </Space>
       ),
     },
@@ -81,52 +72,29 @@ const Newproducts: React.FC = () => {
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      const file = values.img?.[0]?.originFileObj;
-
       setLoading(true);
-
-      if (file) {
-        const storageRef = ref(storage, `images/${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        uploadTask.on(
-          "state_changed",
-          snapshot => {},
-          error => {
-            setLoading(false);
-            alert("Error: " + error.message);
-          },
-          async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            handleFirebaseOperation({ ...values, img: downloadURL });
-          }
-        );
-      } else {
-        handleFirebaseOperation(values);
-      }
+      await handleFirebaseOperation(values);
     } catch (error) {
       alert("Error: " + (error as Error).message);
     }
   };
 
-  const handleFirebaseOperation = async (values: string[] | number[] ) => {
+  const handleFirebaseOperation = async (values: { name: string; price: number }) => {
     try {
       setLoading(true);
 
       if (selectedProductId) {
         const productRef = getDocument(db, `products/${selectedProductId}`);
         await updateDocument(productRef, { ...values });
-        // alert("Product updated");
       } else {
         await addDoc(collection(db, "products"), { ...values });
-        // alert("Product added");
       }
 
       handleCancel();
       setLoading(false);
       fetchProducts();
     } catch (error) {
-    //   alert("Error: " + (error as Error).message);
+      alert("Error: " + (error as Error).message);
       setLoading(false);
     }
   };
@@ -145,10 +113,9 @@ const Newproducts: React.FC = () => {
       try {
         setLoading(true);
         await deleteDocument(getDocument(db, "products", productId));
-        // alert("Product deleted");
-        fetchProducts(); // Update the product list after deletion
+        fetchProducts();
       } catch (error) {
-        // alert("Error: " + (error as Error).message);
+        alert("Error: " + (error as Error).message);
       } finally {
         setLoading(false);
       }
@@ -159,7 +126,6 @@ const Newproducts: React.FC = () => {
     form.setFieldsValue({
       name: product.name,
       price: product.price,
-      // img: product.img // Uncomment this if you want to edit the image
     });
     setSelectedProductId(product.id);
     setIsModalOpen(true);
@@ -171,9 +137,8 @@ const Newproducts: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center h-screen bg-gray-100 p-4">
-   
-        <h1 className="text-center text-[40px] mb-6">NEW ARRIVALS</h1>
-      <Table className="w-full " columns={columns} dataSource={products.map((product, index) => ({ ...product, index }))} rowKey="id" />
+      <h1 className="text-center text-[40px] mb-6">NEW ARRIVALS</h1>
+      <Table className="w-full" columns={columns} dataSource={products.map((product, index) => ({ ...product, index }))} rowKey="id" />
 
       <Modal
         title={selectedProductId ? "Edit Product" : "Add Product"}
@@ -197,21 +162,9 @@ const Newproducts: React.FC = () => {
           >
             <Input type="number" />
           </Form.Item>
-          {/* Uncomment this section if you want to allow editing of the image */}
-          {/* <Form.Item
-            name="img"
-            label="Upload Image"
-            rules={[{ required: true, message: "Please upload image!" }]}
-            valuePropName="fileList"
-            getValueFromEvent={(e) => e && e.fileList}
-          >
-            <Upload beforeUpload={() => false} listType="picture">
-              <Button icon={<UploadOutlined />}>Select Image</Button>
-            </Upload>
-          </Form.Item> */}
         </Form>
-        
       </Modal>
+
       <div className="mb-6 fixed bottom-[30px] right-[30px]">
         <Button title="Add Product" type="primary" onClick={showModal}>+</Button>
       </div>
