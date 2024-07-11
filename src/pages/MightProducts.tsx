@@ -95,7 +95,7 @@ const MightProducts: React.FC = () => {
       setLoading(true);
 
       if (selectedProductId) {
-        const productRef = getDocument(db, `MightProducts/${selectedProductId}`);
+        const productRef = getDocument(db, `mightProducts/${selectedProductId}`);
         await updateDocument(productRef, { ...values });
       } else {
         await addDoc(collection(db, "mightProducts"), { ...values });

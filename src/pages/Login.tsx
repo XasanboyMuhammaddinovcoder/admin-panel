@@ -1,23 +1,35 @@
 import React, { useState } from "react";
 import { Button, Input, Form } from "antd";
-import { signInWithEmailAndPassword  } from "firebase/auth";
-import {auth} from '../../firebase/config' 
-// import 'antd/dist/antd.css';
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebase/config";
+import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true);
     try {
-      
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      alert("Ma'lumotlar yuborildi");
+      // Authenticate user with Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Save user data locally (for example, in localStorage)
+      localStorage.setItem("user", JSON.stringify(user.email));
+
+      // Inform user about successful login
+      navigate('/');
     } catch (error) {
       alert("Xatolik yuz berdi: " + (error as Error).message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    navigate('/');
   };
 
   return (
@@ -56,6 +68,7 @@ const Login: React.FC = () => {
               htmlType="submit"
               className="w-full"
               loading={loading}
+              onClick={handleClick}
             >
               Kirish
             </Button>

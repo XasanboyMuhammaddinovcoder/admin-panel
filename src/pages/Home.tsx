@@ -1,38 +1,75 @@
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { Pie } from 'react-chartjs-2';
+import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+import { db } from '../../firebase/config';
+import { collection, getDocs } from "firebase/firestore";
+import 'tailwindcss/tailwind.css';
 
-export default function Home() {
+Chart.register(ArcElement, Tooltip, Legend);
+
+const Home: React.FC = () => {
+  const [chartData, setChartData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const querySnapshot = await getDocs(collection(db, "products"));
+      const categoryCounts: { [key: string]: number } = {};
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const category = data.category;
+
+        if (category) {
+          if (categoryCounts[category]) {
+            categoryCounts[category]++;
+          } else {
+            categoryCounts[category] = 1;
+          }
+        }
+      });
+
+      const categories = Object.keys(categoryCounts);
+      const counts = Object.values(categoryCounts);
+
+      setChartData({
+        labels: categories,
+        datasets: [
+          {
+            label: '# of Votes',
+            data: counts,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(255, 206, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+            ],
+            borderColor: [
+              'rgba(255, 99, 132, 1)',
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+            ],
+            borderWidth: 1,
+          },
+        ],
+      });
+    };
+
+    fetchData();
+  }, []);
+
+  if (!chartData) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <>
-      <div className="flex justify-between p-20 flex-wrap gap-8">
-        <div className="border-[1px] flex flex-col justify-between  w-96 h-96  rounded-lg p-12">
-          <h2 className="uppercase text-center text-2xl">NEW ARRIVALS</h2>
-          <div className="flex justify-center">
-            <Link to={'/dashboard/new'} className="w-80 flex justify-center items-center h-12 text-white bg-black rounded-[42px]">
-              See Products
-            </Link>
-          </div>
-        </div>
-        <div className="border-[1px] flex flex-col justify-between   w-96 h-96  rounded-lg p-12">
-          <div>
-            <h2 className="uppercase text-center text-2xl">top selling</h2>
-          </div>
-          <div className="flex justify-end flex-col items-center">
-            <Link to={'/dashboard/top'} className="w-80 flex justify-center items-center h-12 text-white bg-black rounded-[42px]">
-              See Products
-            </Link>
-          </div>
-        </div>
-        <div className="border-[1px] flex flex-col justify-between   w-96 h-96  rounded-lg p-12">
-          <div>
-            <h2 className="uppercase text-center text-2xl">You might also like</h2>
-          </div>
-          <div className="flex justify-end flex-col items-center">
-            <Link to={'/dashboard/might'} className="w-80 flex justify-center items-center h-12 text-white bg-black rounded-[42px]">
-              See Products
-            </Link>
-          </div>
-        </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <h1 className="text-3xl font-bold mb-6">Products</h1>
+      <div className="w-[600px]">
+        <Pie data={chartData} />
       </div>
-    </>
-  )
-}
+    </div>
+  );
+};
+
+export default Home;

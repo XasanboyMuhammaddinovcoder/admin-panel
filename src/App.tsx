@@ -8,7 +8,17 @@ import NewProducts from "./pages/NewProducts";
 import TopProducts from "./pages/TopProducts";
 import MightProducts from "./pages/MightProducts";
 
-const users: string = 'a';
+// const userJson = localStorage.getItem('user');
+// const user: string = userJson ? JSON.parse(userJson) : null;
+const user: string = 'aa';
+
+// const user = ;
+
+// // Now 'user' will contain the parsed object if it exists, or null if not
+// console.log(user); // Check the contents of 'user' in the console
+
+// // Example usage
+
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -37,14 +47,14 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={
-          <ProtectedRoute isAuthentication={Boolean(users)}>
+          <ProtectedRoute isAuthentication={Boolean(user)}>
             <Layout>
               <Home />
             </Layout>
           </ProtectedRoute>
         } />
         <Route path="/dashboard" element={
-          <ProtectedRoute isAuthentication={Boolean(users)}>
+          <ProtectedRoute isAuthentication={Boolean(user)}>
             <Layout>
               <Dashboard />
               <Outlet />
